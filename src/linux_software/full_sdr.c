@@ -162,15 +162,15 @@ void print_benchmark(volatile unsigned int *periph_base)
 void print_help_message() {
     printf("\n\r\n\rJustin Poiani - Lab 9\n\r\n\r");
     printf("Controls:\n\r");
-    printf("- To toggle ethernet, press \'e\'\n\r");
+    printf("- To toggle ethernet, press \'e\', then enter.\n\r");
     printf("- To set source frequency, press \'f\'. At the prompt, type up to 9 decimal numbers, then enter.\n\r");
     printf("- To set tuner frequency, press \'t\'. At the prompt, type up to 9 decimal numbers, then enter.\n\r");
-    printf("- To play a song, press \'s\'.\n\r");
-    printf("- To run the FIFO throughput benchmark, press \'b\'.\n\r");
-    printf("- To increase the source_frequency by 0100 Hz, press \'u\'.\n\r");
-    printf("- To increase the source_frequency by 1000 Hz, press \'U\'.\n\r");
-    printf("- To decrease the source_frequency by 0100 Hz, press \'d\'.\n\r");
-    printf("- To decrease the source_frequency by 1000 Hz, press \'D\'.\n\r");
+    printf("- To play a song, press \'s\', then enter.\n\r");
+    printf("- To run the FIFO throughput benchmark, press \'b\', then enter.\n\r");
+    printf("- To increase the source_frequency by 0100 Hz, press \'u\', then enter.\n\r");
+    printf("- To increase the source_frequency by 1000 Hz, press \'U\', then enter.\n\r");
+    printf("- To decrease the source_frequency by 0100 Hz, press \'d\', then enter.\n\r");
+    printf("- To decrease the source_frequency by 1000 Hz, press \'D\', then enter.\n\r");
     printf("Any other key will reprint this message.\n\r");
 }
 
