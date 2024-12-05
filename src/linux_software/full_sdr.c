@@ -30,6 +30,7 @@
 
 // mutual exclusion semaphore for thread synchronization
 volatile int thread_flag = 0;
+int ethernet_flag = 1;
 
 // this struct will hold the arguments passed to the play_tune() function,
 // which are the radio memory address and the base frequency
@@ -126,8 +127,10 @@ void* send_udp_data(void* arg)
         }
 
         // send buffer
-        sendto(sock,buf,sizeof(buf),0,(struct sockaddr *) &dest,sizeof(dest));
-        count++;
+        if (ethernet_flag) {
+            sendto(sock,buf,sizeof(buf),0,(struct sockaddr *) &dest,sizeof(dest));
+            count++;
+        }
     }
 
     return NULL;
@@ -157,10 +160,13 @@ void print_benchmark(volatile unsigned int *periph_base)
 }
 
 void print_help_message() {
-    printf("Justin Poiani - Lab 9\n\r");
+    printf("\n\r\n\rJustin Poiani - Lab 9\n\r\n\r");
     printf("Controls:\n\r");
+    printf("- To toggle ethernet, press \'e\'\n\r");
     printf("- To set source frequency, press \'f\'. At the prompt, type up to 9 decimal numbers, then enter.\n\r");
     printf("- To set tuner frequency, press \'t\'. At the prompt, type up to 9 decimal numbers, then enter.\n\r");
+    printf("- To play a song, press \'s\'.\n\r");
+    printf("- To run the FIFO throughput benchmark, press \'b\'.\n\r");
     printf("- To increase the source_frequency by 0100 Hz, press \'u\'.\n\r");
     printf("- To increase the source_frequency by 1000 Hz, press \'U\'.\n\r");
     printf("- To decrease the source_frequency by 0100 Hz, press \'d\'.\n\r");
@@ -208,9 +214,9 @@ int main(int argc, char *argv[])
     radio_fifo[SRR] = 0xA5;
 
     // clear radio fifo interrupt register
-    printf("Radio fifo interrupt register reads %x\n\r",radio_fifo[0]);
+    /* printf("Radio fifo interrupt register reads %x\n\r",radio_fifo[0]); */
     radio_fifo[ISR] = 0xFFFFFFFF; // write to clear reset bits
-    printf("Radio fifo interrupt register reads %x\n\r",radio_fifo[0]);
+    /* printf("Radio fifo interrupt register reads %x\n\r",radio_fifo[0]); */
 
     // start sending data over udp
     udp_args.ptrToFifo = radio_fifo;
@@ -223,8 +229,15 @@ int main(int argc, char *argv[])
 
     while(1) {
 
+        // prompt for input
+        printf("Enter a single character command: ");
+
         // get character from stdin (blocking)
         inChar = getchar();
+
+        // flush the stdin buffer to disregard extra input chars
+        // https://www.geeksforgeeks.org/clearing-the-input-buffer-in-cc/
+        while ((getchar()) != '\n'); // got this from geeksforgeeks
 
         // check the received byte
         switch (inChar) {
@@ -233,17 +246,19 @@ int main(int argc, char *argv[])
             case '\n': // no input- do not change behavior
                 break;
 
+            case 'e':
+                ethernet_flag = 1 - ethernet_flag; // toggle ethernet
+                break;
+
             case 'f': // set frequency of audio source
                 printf("(SOURCE) Type up to 9 numbers, then press enter: ");
                 for(i=0;i<15;i++)
                     inBuf[i] = '\n';
                 for(i=0;i<9;i++) { // input up to 9 numbers
                     inBuf[i] = getchar();
-                    if (inBuf[i] == '\r') {
-                        inBuf[i] = '\n';
+                    if (inBuf[i] == '\n') {
                         break;
                     }
-                    putchar(inBuf[i]);
                 }
                 printf("\n\r");
                 source_freq = atoi(inBuf); // ascii to integer
@@ -255,11 +270,9 @@ int main(int argc, char *argv[])
                     inBuf[i] = '\n';
                 for(i=0;i<9;i++) { // input up to 9 numbers
                     inBuf[i] = getchar();
-                    if (inBuf[i] == '\r') {
-                        inBuf[i] = '\n';
+                    if (inBuf[i] == '\n') {
                         break;
                     }
-                    putchar(inBuf[i]);
                 }
                 printf("\n\r");
                 tuner_freq = atoi(inBuf); // ascii to integer
@@ -268,6 +281,12 @@ int main(int argc, char *argv[])
             case 's': // play song
                 song_args.base_frequency = tuner_freq;
                 play_tune(&song_args);
+                radioTuner_setAdcFreq(my_periph,source_freq); // reset tone
+                break;
+
+            case 'b': // run benchmark
+                print_benchmark(my_periph);
+                break;
 
             case 'u': // inc 100 Hz
                 source_freq += 100;
@@ -290,12 +309,13 @@ int main(int argc, char *argv[])
                 break;
         }
 
-
+        // apply any changes to the tuner freq
         if (tuner_freq != old_tuner_freq) {
             radioTuner_tuneRadio(my_periph,tuner_freq);
             old_tuner_freq = tuner_freq;
         }
 
+        // apply any changes to the source freq
         if (source_freq != old_source_freq) {
 
             radioTuner_setAdcFreq(my_periph,source_freq);
